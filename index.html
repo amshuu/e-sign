@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas Drawing</title>
+    <style>
+        #canvas {
+            border: 1px solid #000;
+        }
+        #controls {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas" width="800" height="600"></canvas>
+    <div id="controls">
+        <label for="color">Select Color:</label>
+        <input type="color" id="color" value="#000000">
+        <br>
+        <label for="thickness">Line Thickness:</label>
+        <input type="range" id="thickness" min="1" max="10" value="2">
+        <br>
+        <input type="radio" id="whiteBackground" name="background" value="white" checked>
+        <label for="whiteBackground">White Background</label>
+        <br>
+        <input type="radio" id="noBackground" name="background" value="transparent">
+        <label for="noBackground">No Background</label>
+        <br>
+        <button id="saveBtn">Save Drawing</button>
+        <br>
+        <button id="clearBtn">Clear Drawing</button>
+    </div>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let drawing = false;
+        let currentColor = '#000000';
+        let currentThickness = 2;
+        let currentBackground = 'white';
+        let lastX, lastY;
+
+        // Function to handle touch events
+        function handleTouchStart(e) {
+            e.preventDefault();
+            lastX = e.touches[0].clientX - canvas.getBoundingClientRect().left;
+            lastY = e.touches[0].clientY - canvas.getBoundingClientRect().top;
+            ctx.beginPath();
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = currentThickness;
+            ctx.moveTo(lastX, lastY);
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            const x = e.touches[0].clientX - canvas.getBoundingClientRect().left;
+            const y = e.touches[0].clientY - canvas.getBoundingClientRect().top;
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            lastX = x;
+            lastY = y;
+        }
+
+        function handleTouchEnd(e) {
+            e.preventDefault();
+            ctx.closePath();
+        }
+
+        canvas.addEventListener('touchstart', handleTouchStart);
+        canvas.addEventListener('touchmove', handleTouchMove);
+        canvas.addEventListener('touchend', handleTouchEnd);
+
+        canvas.addEventListener('mousedown', (e) => {
+            drawing = true;
+            lastX = e.clientX - canvas.getBoundingClientRect().left;
+            lastY = e.clientY - canvas.getBoundingClientRect().top;
+            ctx.beginPath();
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = currentThickness;
+            ctx.moveTo(lastX, lastY);
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            drawing = false;
+            ctx.closePath();
+        });
+
+        canvas.addEventListener('mousemove', handleMouseMove);
+
+        function handleMouseMove(e) {
+            if (!drawing) return;
+            const x = e.clientX - canvas.getBoundingClientRect().left;
+            const y = e.clientY - canvas.getBoundingClientRect().top;
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            lastX = x;
+            lastY = y;
+        }
+
+        document.getElementById('color').addEventListener('input', (e) => {
+            currentColor = e.target.value;
+        });
+
+        document.getElementById('thickness').addEventListener('input', (e) => {
+            currentThickness = e.target.value;
+        });
+
+        document.querySelectorAll('input[name="background"]').forEach((radio) => {
+            radio.addEventListener('change', (e) => {
+                currentBackground = e.target.value;
+            });
+        });
+
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            saveCanvas();
+        });
+
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            clearCanvas();
+        });
+
+        function saveCanvas() {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            const tempCtx = tempCanvas.getContext('2d');
+
+            if (currentBackground === 'transparent') {
+                tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+            } else {
+                tempCtx.fillStyle = currentBackground;
+                tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            }
+
+            tempCtx.drawImage(canvas, 0, 0);
+
+            const downloadLink = document.createElement('a');
+            downloadLink.href = tempCanvas.toDataURL('image/png');
+            downloadLink.download = 'drawing.png';
+            downloadLink.click();
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+    </script>
+</body>
+</html>
